@@ -61,6 +61,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :cors_plug,
+  origin: [
+    "https://yt.chop.dev"
+  ]
+
 config :langchain,
   openai_api_key: System.get_env("OPENAI_API_KEY"),
   vertex_ai_key: System.get_env("VERTEX_AI_API_KEY"),
