@@ -20,7 +20,8 @@ config :yt_chop_dev, YtChopDevWeb.Endpoint,
     layout: false
   ],
   pubsub_server: YtChopDev.PubSub,
-  live_view: [signing_salt: "SJXPlYpZ"]
+  live_view: [signing_salt: "SJXPlYpZ"],
+  server: true
 
 # Configures the mailer
 #

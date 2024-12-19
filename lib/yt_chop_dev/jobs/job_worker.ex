@@ -2,7 +2,6 @@ defmodule YtChopDev.Jobs.JobWorker do
   require Logger
 
   alias Broadway.Message
-  alias YtChopDevWeb.Channels.Broadcaster
 
   def catch_all_error(message, error, job) do
     message

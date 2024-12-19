@@ -31,7 +31,7 @@ release:
 	MIX_ENV=prod mix release
 
 prod:
-	PHX_SERVER=1 _build/prod/rel/yt_chop_dev/bin/yt_chop_dev start
+	_build/prod/rel/yt_chop_dev/bin/yt_chop_dev start
 
 reload-systemd:
 	sudo systemctl daemon-reload && sudo systemctl reload-or-restart yt_chop_dev.service

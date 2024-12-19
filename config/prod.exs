@@ -6,6 +6,7 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :yt_chop_dev, YtChopDevWeb.Endpoint,
+  url: [host: "127.0.0.1"],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Configures Swoosh API Client
