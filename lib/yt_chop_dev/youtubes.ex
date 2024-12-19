@@ -27,17 +27,19 @@ defmodule YtChopDev.Youtubes do
     Repo.all(from y in YoutubeVideo, order_by: [desc: y.updated_at], limit: ^limit)
   end
 
-  def latest_youtube_videos_has_translates(limit) do
-    # join query of youtube_videos that has more than one youtube_video_translates
+  def latest_youtube_videos_with_translates(page, limit) do
+    offset = page * limit + 1
+
     query =
       from v in YoutubeVideo,
+        select: v,
         join: t in YoutubeVideoTranslate,
         on: t.youtube_video_id == v.id,
         group_by: v.id,
         having: count(t.id) > 0,
         order_by: [desc: v.updated_at],
         limit: ^limit,
-        select: v
+        offset: ^offset
 
     Repo.all(query)
   end
@@ -64,6 +66,10 @@ defmodule YtChopDev.Youtubes do
 
   def get_youtube_video_by_video_id(id) do
     Repo.one(from y in YoutubeVideo, where: y.video_id == ^id)
+  end
+
+  def get_multi_youtube_videos_by_ids(ids) do
+    Repo.all(from y in YoutubeVideo, where: y.video_id in ^ids)
   end
 
   @doc """

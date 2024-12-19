@@ -37,11 +37,17 @@ defmodule YtChopDev.Jobs.JobWorkerYoutubeTranslate do
     language = job.args["language"]
     gender = job.args["gender"]
 
-    video = Youtubes.get_youtube_video_by_video_id(video_id)
+    try do
+      video = Youtubes.get_youtube_video_by_video_id(video_id)
 
-    with {:ok, video, translate} <-
-           YoutubeTranslateUtils.youtube_translate(video, language, gender) do
-      {:ok, video, translate}
+      with {:ok, video, translate} <-
+             YoutubeTranslateUtils.youtube_translate(video, language, gender) do
+        {:ok, video, translate}
+      end
+    rescue
+      exception ->
+        Logger.error(inspect(exception))
+        {:error, inspect(exception)}
     end
   end
 

@@ -13,7 +13,7 @@
 
   <%= if length(@youtube_video_translates) == 0 do %>
     <div class="flex justify-center">
-      <img src={thumbnail} class="w-full max-w-[480px]" />
+      <img src={thumbnail} class="w-full max-w-[480px] object-cover" />
     </div>
     <div>
       <p class="text-center font-bold py-4">Not yet translated</p>
@@ -21,7 +21,8 @@
   <% else %>
     <div class="py-2">
       <%= for translate <- @youtube_video_translates do %>
-        <% selected_class = if translate.id == @translate.id, do: ~c"bg-blue-400 text-white", else: ~c"" %>
+        <% selected_class =
+          if translate.id == @translate.id, do: ~c"bg-blue-400 text-white", else: ~c"" %>
         <.link
           class={"rounded border border-gray-400 px-2 py-1 #{selected_class} mr-2"}
           navigate={"/v/#{@youtube_video.video_id}?language=#{translate.language}&gender=#{translate.gender}"}
@@ -46,11 +47,10 @@
       <video controls src={"/files/#{@translate.filename}"} poster={thumbnail} />
     </div>
     <div class="max-h-[40vh] overflow-y-scroll text-xs">
-      <%= for row <- String.split(@translate.transcript, "\n") do %>
-        <% {formated_time, text} = parse_transcript_row(row) %>
+      <%= for {time, content}<- format_transcript(@translate.transcript) do %>
         <p class="grid grid-cols-[36px,1fr]">
-          <span class="text-gray-400">{formated_time}</span>
-          <span>{text}</span>
+          <span class="text-gray-400">{time}</span>
+          <span>{content}</span>
         </p>
       <% end %>
     </div>

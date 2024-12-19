@@ -53,7 +53,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
 
     socket =
       socket
-      |> assign(:page_title, page_title(socket.assigns.live_action))
+      |> assign(:page_title, video.title <> " - yt.chop.dev")
       |> assign(:youtube_video, video)
       |> assign(:youtube_video_translates, translates)
       |> assign(:translate, translate)
@@ -129,8 +129,8 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
     end
   end
 
-  def parse_transcript_row(row) do
-    [start, text] = row |> String.split(">>>") |> Enum.map(&String.trim/1)
+  def format_transcript_row(row) do
+    [start, content] = row |> String.split(">>>") |> Enum.map(&String.trim/1)
 
     {start, _} = Integer.parse(start)
 
@@ -139,8 +139,12 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
 
     formatted_time = "#{minutes}:#{String.pad_leading(Integer.to_string(seconds), 2, "0")}"
 
-    {formatted_time, text}
+    {formatted_time, content}
   end
 
-  defp page_title(:show), do: "Youtube video"
+  def format_transcript(transcript) do
+    transcript
+    |> String.split("\n")
+    |> Enum.map(&format_transcript_row/1)
+  end
 end

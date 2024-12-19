@@ -24,6 +24,8 @@ defmodule YtChopDevWeb.Router do
       live "/", YoutubeVideoLive.Index, :index
       live "/v/:id", YoutubeVideoLive.Show, :show
       live "/v/:id/request", YoutubeVideoLive.Index, :request
+
+      live "/jobs", JobLive.Index, :index
     end
   end
 

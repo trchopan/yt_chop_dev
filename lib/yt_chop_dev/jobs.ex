@@ -17,8 +17,8 @@ defmodule YtChopDev.Jobs do
       [%Job{}, ...]
 
   """
-  def list_jobs do
-    Repo.all(Job)
+  def list_jobs(limit) do
+    Repo.all(from j in Job, order_by: [desc: j.updated_at], limit: ^limit)
   end
 
   @doc """

@@ -11,7 +11,6 @@ defmodule YtChopDevWeb.YoutubeVideoLive.FormComponent do
         for={@form}
         id="youtube_video-form"
         phx-target={@myself}
-        phx-change="validate"
         phx-submit="navigate"
       >
         <div class="flex gap-2">
@@ -33,22 +32,6 @@ defmodule YtChopDevWeb.YoutubeVideoLive.FormComponent do
      socket
      |> assign(assigns)
      |> assign(:form, to_form(%{"youtube_url" => ""}))}
-  end
-
-  @impl true
-  def handle_event("validate", %{"youtube_url" => youtube_url} = params, socket) do
-    form =
-      case YoutubeInfoUtils.validate_youtube_url(youtube_url) do
-        {:ok, _} ->
-          to_form(params)
-
-        {:error, message} ->
-          to_form(params, errors: [youtube_url: message])
-      end
-
-    IO.inspect(form)
-
-    {:noreply, assign(socket, form: form)}
   end
 
   @impl true
