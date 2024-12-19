@@ -21,6 +21,9 @@ dev:
 down:
 	docker compose down
 
+migrate:
+	_build/prod/rel/yt_chop_dev/bin/yt_chop_dev eval "YtChopDev.Release.migrate"
+
 gen-release:
 	 mix phx.gen.release
 

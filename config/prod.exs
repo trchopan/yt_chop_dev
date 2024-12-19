@@ -7,7 +7,9 @@ import Config
 # before starting your production server.
 config :yt_chop_dev, YtChopDevWeb.Endpoint,
   url: [host: "127.0.0.1"],
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  check_origin: ["//yt.chop.dev"]
+
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: YtChopDev.Finch
