@@ -1,0 +1,88 @@
+<.back navigate={~p"/"}>Back to video list</.back>
+
+<div class="h-8"></div>
+
+<%= if @youtube_video == nil do %>
+  <p>Not found youtube video</p>
+<% else %>
+  <.header>
+    {@youtube_video.title}
+  </.header>
+
+  <% thumbnail = YoutubeInfoUtils.make_youtube_thumbnail_url(@youtube_video.video_id) %>
+
+  <%= if length(@youtube_video_translates) == 0 do %>
+    <div class="flex justify-center">
+      <img src={thumbnail} class="w-full max-w-[480px]" />
+    </div>
+    <div>
+      <p class="text-center font-bold py-4">Not yet translated</p>
+    </div>
+  <% else %>
+    <div class="py-2">
+      <%= for translate <- @youtube_video_translates do %>
+        <% selected_class = if translate.id == @translate.id, do: ~c"bg-blue-400 text-white", else: ~c"" %>
+        <.link
+          class={"rounded border border-gray-400 px-2 py-1 #{selected_class} mr-2"}
+          navigate={"/v/#{@youtube_video.video_id}?language=#{translate.language}&gender=#{translate.gender}"}
+        >
+          {translate.language} - {translate.gender}
+        </.link>
+      <% end %>
+    </div>
+  <% end %>
+  <% youtube_url = "https://www.youtube.com/watch?v=#{@youtube_video.video_id}" %>
+  <div>
+    Source: <a class="text-blue-500" target="_blank" href={youtube_url}>{youtube_url}</a>
+  </div>
+  <div>Author: {@youtube_video.author}</div>
+  <div>Published at: {@youtube_video.published_at}</div>
+<% end %>
+
+<%= if @translate != nil do %>
+  <% thumbnail = YoutubeInfoUtils.make_youtube_thumbnail_url(@youtube_video.video_id) %>
+  <div>
+    <div>
+      <video controls src={"/files/#{@translate.filename}"} poster={thumbnail} />
+    </div>
+    <div class="max-h-[40vh] overflow-y-scroll text-xs">
+      <%= for row <- String.split(@translate.transcript, "\n") do %>
+        <% {formated_time, text} = parse_transcript_row(row) %>
+        <p class="grid grid-cols-[36px,1fr]">
+          <span class="text-gray-400">{formated_time}</span>
+          <span>{text}</span>
+        </p>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="flex justify-center">
+  <.simple_form class="max-w-md" for={@request_form} phx-submit="request_translate">
+    <div>
+      <div>Request translate (One translation is about 5~10 minutes)</div>
+      <div>Yêu cầu dịch thuật (Một bản dịch mất khoảng 5~10 phút)</div>
+      <div>翻訳を依頼 (1つの翻訳に約5〜10分かかります)</div>
+      <div>번역 요청 (번역 하나당 약 5~10분 소요)</div>
+    </div>
+
+    <.input
+      type="select"
+      field={@request_form[:language]}
+      label="Language"
+      options={["vie", "jap", "kor"]}
+    />
+    <.input
+      type="select"
+      field={@request_form[:gender]}
+      label="Gender"
+      options={["male", "female"]}
+    />
+    <:actions>
+      <.button class="whitespace-nowrap" phx-disable-with="Checking...">Translate ✨</.button>
+      <%= if @request_form_error do %>
+        <div class="text-red-500 text-sm">{@request_form_error}</div>
+      <% end %>
+    </:actions>
+  </.simple_form>
+</div>

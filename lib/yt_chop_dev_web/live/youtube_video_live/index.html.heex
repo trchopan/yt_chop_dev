@@ -1,0 +1,59 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <.live_component module={YtChopDevWeb.YoutubeVideoLive.FormComponent} id="youtube-video-form" />
+  <div class="flex items-center justify-center">
+    <div>
+      <div>Pending Jobs</div>
+      <div class="text-2xl font-bold">{length(@jobs)} / {@limit}</div>
+      <div class="text-xs text-stone-500">
+        <p>
+          Because it is resource expensive, we limit the number of translating jobs to {@limit}.
+        </p>
+        <p>
+          Vì tốn nhiều tài nguyên, chúng tôi giới hạn số lượng công việc dịch thuật ở mức {@limit}.
+        </p>
+        <p>
+          リソースを多く消費するため、翻訳作業の数を{@limit}に制限しています。
+        </p>
+        <p>
+          자원이 많이 소모되기 때문에 번역 작업의 수를 {@limit}개로 제한합니다.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="h-8"></div>
+
+<.header>
+  Latest videos
+</.header>
+
+<div class="flex flex-col gap-4">
+  <%= for {key, video}<- @streams.youtube_videos do %>
+    <div class="grid grid-cols-[12rem,1fr] gap-2">
+      <% thumbnail = YoutubeInfoUtils.make_youtube_thumbnail_url(video.video_id) %>
+      <div>
+        <.link navigate={~p"/v/#{video.video_id}"}>
+          <img class="h-32 w-full bg-contain" style={"background-image: url(#{thumbnail})"} />
+        </.link>
+      </div>
+      <div>
+        <div class="text-md font-medium pb-3">
+          <.link navigate={~p"/v/#{video.video_id}"}>
+            {video.title}
+          </.link>
+        </div>
+        <div>
+          <%= for translate <- video.youtube_video_translates do %>
+            <.link
+              class="rounded border border-gray-400 px-2 py-1 mr-2"
+              navigate={"/v/#{video.video_id}?language=#{translate.language}&gender=#{translate.gender}"}
+            >
+              {translate.language} - {translate.gender}
+            </.link>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

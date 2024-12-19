@@ -1,0 +1,12 @@
+services:
+    database:
+        image: 'pgvector/pgvector:pg17'
+        volumes:
+            - ./db-data:/var/lib/postgresql/data/
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: yt_chop_dev_dev
+
+        ports:
+            - 5432:5432
