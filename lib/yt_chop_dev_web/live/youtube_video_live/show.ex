@@ -73,6 +73,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
     {:ok, video_info} = YoutubeInfoUtils.get_video_information(video.video_id)
 
     with :ok <- check_video_length(video_info),
+         :ok <- check_video_has_en_caption(video_info),
          :ok <- check_already_translated(video, language, gender),
          :ok <- check_job_limit(),
          :ok <- check_existing_job(video, language, gender) do
@@ -84,7 +85,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
         })
 
       JobAgent.queue_job(job)
-      {:noreply, socket}
+      {:noreply, socket |> push_navigate(to: ~p"/jobs")}
     else
       {:error, details} ->
         {:noreply, socket |> assign(:request_form_error, details)}
@@ -94,6 +95,21 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
   def check_video_length(video_info) do
     if video_info["lengthSeconds"] > 30 * 60 do
       {:error, "Video too long (max 30 minutes)"}
+    else
+      :ok
+    end
+  end
+
+  def check_video_has_en_caption(video_info) do
+    found_en_caption =
+      video_info["captions"]
+      |> Enum.find(fn e ->
+        IO.inspect(e, label: "caption")
+        Enum.member?(["en", "en-US"], e["language_code"])
+      end)
+
+    if found_en_caption == nil do
+      {:error, "Video does not have English caption"}
     else
       :ok
     end

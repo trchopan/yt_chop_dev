@@ -7,7 +7,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
   alias YtChopDev.AI.AITextToSpeechUtils
   alias YtChopDev.Youtubes.YoutubeInfoUtils
 
-  def download_html(youtube_url, save_html \\ true) do
+  def download_html(youtube_url, save_html \\ false) do
     Req.post("https://youtubetotranscript.com/transcript",
       headers: [
         {"accept",
@@ -31,6 +31,9 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     end
   end
 
+  @doc """
+  To use with download_html(url, true) to save to file and read from it without download it again
+  """
   def parse_file_content(filter_sponsor \\ false) do
     file_content = File.read!("index.html")
     parse_transcript(file_content, filter_sponsor)

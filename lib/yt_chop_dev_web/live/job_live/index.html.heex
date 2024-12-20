@@ -1,7 +1,7 @@
 <.back navigate={~p"/"}>Back to video list</.back>
 
 <.header>
-  Jobs ({length(filter_pending_jobs(@jobs))}/{@limit})
+  Jobs (pending: {length(filter_pending_jobs(@jobs))})
   <div class="flex flex-col gap-2 text-xs text-stone-500">
     <p>
       Because it is resource expensive, we limit the number of translating jobs to {@limit}.
@@ -35,5 +35,9 @@
   </:col>
   <:col :let={job} label="Language">{job.args["language"]}</:col>
   <:col :let={job} label="Gender">{job.args["gender"]}</:col>
-  <:col :let={job} label="Status">{job.status}</:col>
+  <:col :let={job} label="Status">
+    <span class={"#{if Enum.member?([:queued, :running], job.status), do: ~c"text-blue-500", else: ~c""}"}>
+      {job.status}
+    </span>
+  </:col>
 </.table>

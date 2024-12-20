@@ -28,7 +28,7 @@ defmodule YtChopDev.Youtubes do
   end
 
   def latest_youtube_videos_with_translates(page, limit) do
-    offset = page * limit + 1
+    offset = page * limit
 
     query =
       from v in YoutubeVideo,
@@ -38,8 +38,8 @@ defmodule YtChopDev.Youtubes do
         group_by: v.id,
         having: count(t.id) > 0,
         order_by: [desc: v.updated_at],
-        limit: ^limit,
-        offset: ^offset
+        offset: ^offset,
+        limit: ^limit
 
     Repo.all(query)
   end

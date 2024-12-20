@@ -26,6 +26,9 @@ defmodule YtChopDevWeb.JobLive.Index do
   end
 
   def filter_pending_jobs(jobs) do
-    jobs |> Enum.filter(fn j -> j.status == :queued or j.status == :running end)
+    jobs
+    |> Enum.filter(fn j ->
+      j.status == :queued or j.status == :running
+    end)
   end
 end

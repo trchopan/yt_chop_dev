@@ -7,7 +7,7 @@
 <div class="h-8"></div>
 
 <.header>
-  Latest videos
+  Latest translations
 </.header>
 
 <div class="flex flex-col gap-4" phx-update="stream" id="videos">
@@ -41,9 +41,15 @@
     </div>
   </div>
 </div>
-<div class="mt-4 flex justify-center">
-  <.button phx-click={JS.push("load_more_videos")}>More</.button>
-</div>
+<%= if @no_more_videos do %>
+  <div>
+    <p class="py-5 text-center text-stone-500">No more videos</p>
+  </div>
+<% else %>
+  <div class="mt-4 flex justify-center">
+    <.button phx-click={JS.push("load_more_videos")}>More</.button>
+  </div>
+<% end %>
 
 <div class="pt-8 flex items-center justify-center">
   <.link navigate="/jobs" class="text-center">

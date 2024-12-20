@@ -7,7 +7,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    limit = 30
+    limit = 2
 
     videos =
       Youtubes.latest_youtube_videos_with_translates(0, limit)
@@ -18,6 +18,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Index do
     socket =
       socket
       |> stream(:youtube_videos, videos)
+      |> assign(:no_more_videos, false)
       |> assign(:jobs, jobs)
       |> assign(:page, 0)
       |> assign(:limit, limit)
@@ -43,8 +44,9 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Index do
 
     socket =
       socket
-      |> assign(:page, page)
       |> stream(:youtube_videos, videos)
+      |> assign(:page, page)
+      |> assign(:no_more_videos, videos == [])
 
     {:noreply, socket}
   end
