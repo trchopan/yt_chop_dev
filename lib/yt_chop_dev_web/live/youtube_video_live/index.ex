@@ -7,7 +7,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    limit = 2
+    limit = 10
 
     videos =
       Youtubes.latest_youtube_videos_with_translates(0, limit)
