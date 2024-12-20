@@ -7,7 +7,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
   alias YtChopDev.AI.AITextToSpeechUtils
   alias YtChopDev.Youtubes.YoutubeInfoUtils
 
-  def download_transcript_html(youtube_url, opts \\ []) do
+  def download_youtubetotranscript_html(youtube_url, opts \\ []) do
     Req.post("https://youtubetotranscript.com/transcript",
       headers: [
         {"accept",
@@ -26,20 +26,15 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
 
         {:ok, body}
 
+      {:ok, %Req.Response{status: status, body: body}} ->
+        {:error, "HTTP request failed: #{status} #{body}"}
+
       {:error, exeption} ->
         {:error, "HTTP request failed: #{exeption.reason}"}
     end
   end
 
-  @doc """
-  To use with download_transcript_html(url, save: true) to save to file and read from it without download it again
-  """
-  def parse_file_content(filter_sponsor \\ false) do
-    file_content = File.read!("youtube-transcript.html")
-    parse_transcript(file_content, filter_sponsor)
-  end
-
-  def parse_transcript(content, filter_sponsor \\ false) do
+  def parse_youtubetotranscript_html_content(content, filter_sponsor \\ false) do
     {:ok, document} = Floki.parse_document(content)
 
     Floki.find(document, "#transcript > .text-primary-content")
@@ -61,15 +56,103 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     |> Enum.map(fn {_tag, attrs, children} ->
       text = children |> Enum.join() |> String.replace(~r"\[.*?\]", "") |> String.trim()
       {data_start, _} = List.keyfind(attrs, "data-start", 0) |> elem(1) |> Float.parse()
-
-      # TODO: add duration to data
-      # {data_duration, _} = List.keyfind(attrs, "data-duration", 0) |> elem(1) |> Float.parse()
-
       {data_start, text}
     end)
-    |> Enum.filter(fn {_start, text} ->
-      text != ""
-    end)
+    |> Enum.filter(fn {_start, text} -> text != "" end)
+  end
+
+  @doc """
+  To use with download_youtubetotranscript_html(url, save: true) to save to file and read from it without download it again
+  """
+  def parse_file_content(filter_sponsor \\ false) do
+    file_content = File.read!("youtube-transcript.html")
+    parse_youtubetotranscript_html_content(file_content, filter_sponsor)
+  end
+
+  def get_transcript_youtubetotranscript(youtube_url, filter_sponsor \\ false) do
+    with {:ok, transcript_file} <- download_youtubetotranscript_html(youtube_url) do
+      {:ok, parse_youtubetotranscript_html_content(transcript_file, filter_sponsor)}
+    else
+      {:error, detail} ->
+        {:error, detail}
+    end
+  end
+
+  def get_transcript_tactiq(youtube_url) do
+    Req.post("https://tactiq-apps-prod.tactiq.io/transcript",
+      headers: [
+        {"Accept", "*/*"},
+        {"Accept-Language", "en-US,en;q=0.6"},
+        {"Cache-Control", "no-cache"},
+        {"Connection", "keep-alive"},
+        {"DNT", "1"},
+        {"Origin", "https://tactiq.io"},
+        {"Pragma", "no-cache"},
+        {"Referer", "https://tactiq.io/"},
+        {"Sec-Fetch-Dest", "empty"},
+        {"Sec-Fetch-Mode", "cors"},
+        {"Sec-Fetch-Site", "same-site"},
+        {"Sec-GPC", "1"},
+        {"User-Agent",
+         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
+        {"content-type", "application/json"},
+        {"sec-ch-ua", "\"Brave\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\""},
+        {"sec-ch-ua-mobile", "?0"},
+        {"sec-ch-ua-platform", "\"macOS\""}
+      ],
+      json: %{
+        "videoUrl" => youtube_url,
+        "langCode" => "en"
+      }
+    )
+    |> case do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        captions =
+          body["captions"]
+          |> Enum.map(fn caption ->
+            {start, _} = Float.parse(caption["start"])
+            {start, caption["text"]}
+          end)
+
+        {:ok, captions}
+
+      {:ok, %Req.Response{status: status, body: body}} ->
+        {:error, "HTTP request failed: #{status} #{body}"}
+
+      {:error, exeption} ->
+        {:error, "HTTP request failed: #{exeption.reason}"}
+    end
+  end
+
+  @doc """
+  Get the transcript from multiple sources
+  - youtubetotranscript
+  - tactiq
+  """
+  def get_transcript(youtube_url) do
+    operations = [
+      &get_transcript_youtubetotranscript/1,
+      &get_transcript_tactiq/1
+    ]
+
+    result =
+      operations
+      |> Enum.find_value(fn operation ->
+        case operation.(youtube_url) do
+          {:ok, result} ->
+            result
+
+          {:error, detail} ->
+            Logger.error("get_transcript > #{inspect(detail)}")
+            nil
+        end
+      end)
+
+    if result == nil do
+      {:error, "No transcript found"}
+    else
+      {:ok, result}
+    end
   end
 
   def translate_transcript(transcripts, language) do
@@ -95,25 +178,49 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     end
   end
 
-  def transcript_to_audio(temp_dir, transcripts, language, gender) do
+  def transcript_to_tts(dir, transcripts, language, gender) do
     audio_files =
       transcripts
-      |> Enum.map(fn {timestamp, text} ->
+      |> Enum.with_index()
+      |> Enum.map(fn {{timestamp, text}, index} ->
         {:ok, audio_bytes} =
           AITextToSpeechUtils.text_to_speech(text, language, gender)
 
-        filename = temp_dir <> "/" <> Float.to_string(timestamp) <> ".wav"
+        filename = dir <> "/" <> Float.to_string(timestamp) <> ".wav"
 
         with :ok <- File.write(filename, audio_bytes) do
-          {:ok, filename}
+          audio_length = get_media_length(filename)
+
+          next_timestamp =
+            transcripts
+            |> Enum.at(index + 1)
+            |> case do
+              nil -> 0
+              {ts, _} -> ts
+            end
+
+          should_be_audio_length = next_timestamp - timestamp
+
+          {:ok, filename} =
+            if should_be_audio_length > 0 and should_be_audio_length < audio_length do
+              tempo = audio_length / should_be_audio_length
+
+              new_filename = (filename |> Path.rootname() |> Path.basename()) <> "_tempo.wav"
+
+              change_audio_tempo(dir, new_filename, filename, tempo)
+            else
+              {:ok, filename}
+            end
+
+          {:ok, {timestamp, filename}}
         end
       end)
 
     if Enum.any?(audio_files, &match?({:error, _}, &1)) do
       {:error, audio_files |> Enum.filter(&match?({:error, _}, &1)) |> Enum.map(&elem(&1, 1))}
     else
-      audio_files = audio_files |> Enum.map(&elem(&1, 1))
-      concat_audio_files(temp_dir, audio_files)
+      {:ok, audio_files |> Enum.map(&elem(&1, 1))}
+      # concat_audio_files(dir, audio_files)
     end
   end
 
@@ -145,8 +252,8 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     end)
   end
 
-  def change_audio_tempo(dir, audio_path, tempo) when is_float(tempo) do
-    run_command(dir, "output_audio_adjusted_tempo.wav", fn output_path ->
+  def change_audio_tempo(dir, output_name, audio_path, tempo) when is_float(tempo) do
+    run_command(dir, output_name, fn output_path ->
       System.cmd(
         "ffmpeg",
         ~w"-y -hide_banner -v error -i #{audio_path} -filter:a atempo=#{tempo} -vn #{output_path}"
@@ -171,6 +278,59 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
         "ffmpeg",
         ~w"-y -hide_banner -v error -i #{sound_path} -i #{voice_path} -filter_complex [1]adelay=#{offset_ms}|#{offset_ms}[d1];[0][d1]amix=inputs=2:duration=longest #{output_path}"
       )
+    end)
+  end
+
+  def combine_voice_sound_v2(dir, tts_audios, background_audio) do
+    run_command(dir, "output_audio.wav", fn output_path ->
+      # Prepare the input files part of the command
+      input_files =
+        tts_audios
+        |> Enum.map(fn {_timestamp, filename} -> "-i #{filename}" end)
+        |> Enum.join(" ")
+
+      # Prepare the filter_complex part of the command
+      filter_complex =
+        tts_audios
+        |> Enum.with_index(1)
+        |> Enum.map(fn {{timestamp, _filename}, index} ->
+          timestamp_ms = (timestamp * 1000) |> trunc()
+          "[#{index}]adelay=delays=#{timestamp_ms}:all=1[r#{index}]"
+        end)
+        |> Enum.join("; ")
+
+      # Prepare the amix part of the command
+      amix_inputs = Enum.count(tts_audios) + 1
+
+      amix =
+        "[0]" <>
+          Enum.map_join(1..Enum.count(tts_audios), "", fn i -> "[r#{i}]" end) <>
+          "amix=inputs=#{amix_inputs}:dropout_transition=0,volume=4[out]"
+
+      IO.puts(filter_complex <> "; " <> amix)
+
+      # Construct the full command
+      command = """
+      ffmpeg -y -hide_banner -v error \
+      -i #{background_audio} \
+      #{input_files} \
+      -filter_complex "#{filter_complex}; #{amix}" \
+      -map "[out]" \
+      -codec:v copy #{output_path}
+      """
+
+      System.cmd("sh", ["-c", command])
+    end)
+  end
+
+  def normalize_audio_volume(dir, audio_path) do
+    run_command(dir, "output_norm.wav", fn output_path ->
+      # ffmpeg -i output_audio.wav -filter:a "dynaudnorm=p=0.9:s=5,volume=2" output_norm.wav
+
+      System.cmd("sh", [
+        "-c",
+        "ffmpeg -y -hide_banner -v error -i #{audio_path} -filter:a \"dynaudnorm=p=0.9:s=5,volume=1.2\" #{output_path}"
+      ])
     end)
   end
 
@@ -219,8 +379,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
         {video, video.transcript |> YoutubeVideo.transcript()}
       else
         Logger.info("#{youtube_id} > Downloading transcript")
-        {:ok, transcript_file} = download_transcript_html(youtube_url)
-        transcripts = parse_transcript(transcript_file)
+        {:ok, transcripts} = get_transcript(youtube_url)
 
         {:ok, video} =
           Youtubes.update_youtube_video(video, %{
@@ -264,39 +423,25 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
         {translate, translated_transcripts}
       end
 
-    audio_offset = translated_transcripts |> Enum.at(0) |> elem(0)
-
     Logger.info("#{youtube_id} > Creating audio files for transcripts")
-    {:ok, audio_path} = transcript_to_audio(temp_dir, translated_transcripts, language, gender)
-
-    video_length = get_media_length(input_video_path)
-    audio_length = get_media_length(audio_path)
-
-    Logger.info(
-      "#{youtube_id} > Video length: #{video_length}, Audio length: #{audio_length}, Offset: #{audio_offset}"
-    )
-
-    tempo = audio_length / (video_length - audio_offset)
-    Logger.info("#{youtube_id} > Tempo: #{tempo}")
-
-    {:ok, adjusted_tempo_audio_path} = change_audio_tempo(temp_dir, audio_path, tempo)
+    {:ok, tts_audios} = transcript_to_tts(temp_dir, translated_transcripts, language, gender)
 
     Logger.info("#{youtube_id} > Making audio without voice #{input_audio_path}")
-    {:ok, removed_voice_path} = audio_without_voice(temp_dir, input_audio_path)
+    {:ok, background_audio} = audio_without_voice(temp_dir, input_audio_path)
+
+    Logger.info("#{youtube_id} > Combining voice and sound")
+
+    {:ok, output_audio_path} =
+      combine_voice_sound_v2(temp_dir, tts_audios, background_audio)
+
+    {:ok, output_audio_path} = normalize_audio_volume(temp_dir, output_audio_path)
 
     Logger.info(
-      "#{youtube_id} > Combining voice and sound #{adjusted_tempo_audio_path} #{removed_voice_path} #{audio_offset}"
-    )
-
-    {:ok, final_input_audio_path} =
-      combine_voice_sound(temp_dir, adjusted_tempo_audio_path, removed_voice_path, audio_offset)
-
-    Logger.info(
-      "#{youtube_id} > Combining video and audio #{input_video_path} #{final_input_audio_path}"
+      "#{youtube_id} > Combining video and audio #{input_video_path} #{output_audio_path}"
     )
 
     {:ok, output_path} =
-      combine_video_audio(output_dir, input_video_path, final_input_audio_path)
+      combine_video_audio(output_dir, input_video_path, output_audio_path)
 
     Logger.info("#{youtube_id} > Output path: #{output_path}")
 

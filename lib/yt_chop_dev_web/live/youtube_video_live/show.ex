@@ -72,7 +72,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
 
     with :ok <- check_video_length(video_info),
          :ok <- check_video_has_en_caption(video_info),
-         :ok <- check_already_translated(video, language, gender),
+         # :ok <- check_already_translated(video, language, gender),
          :ok <- check_job_limit(),
          :ok <- check_existing_job(video, language, gender) do
       {:ok, job} =

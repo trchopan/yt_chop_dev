@@ -1,9 +1,12 @@
 defmodule YtChopDev.Jobs.JobWorker do
   require Logger
 
+  alias YtChopDev.Jobs
   alias Broadway.Message
 
   def catch_all_error(message, error, job) do
+    {:ok, job} = Jobs.update_job(job, %{status: :failed, metadata: %{error: error}})
+
     message
     |> Message.put_data({:error, error, job})
     |> Message.failed(:catch_all)
