@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 help:
 	@echo "Available commands:"
 	@echo "  make up           - Turn on the dev environment"
@@ -28,6 +30,7 @@ gen-release:
 	 mix phx.gen.release
 
 release:
+	source .env
 	mix deps.get --prod
 	MIX_ENV=prod mix compile
 	MIX_ENV=prod mix assets.deploy
@@ -37,7 +40,7 @@ prod:
 	_build/prod/rel/yt_chop_dev/bin/yt_chop_dev start
 
 reload-systemd:
-	sudo systemctl daemon-reload && sudo systemctl reload-or-restart yt_chop_dev.service
+	sudo systemctl daemon-reload && sudo systemctl reload-or-restart yt-chop-dev.service
 
 
 
