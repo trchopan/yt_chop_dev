@@ -33,11 +33,24 @@
       {video.title}
     <% end %>
   </:col>
-  <:col :let={job} label="Language">{job.args["language"]}</:col>
-  <:col :let={job} label="Gender">{job.args["gender"]}</:col>
+  <:col :let={job} label="Translation">
+    {job.args["language"]} / {job.args["gender"]}
+  </:col>
+  <:col :let={job} label="Time">
+    <p class="text-xs">
+      <span phx-hook="DateTimeFmt" id={"#{job.id}-create-time"}>{job.inserted_at}</span>
+    </p>
+    <p>~</p>
+    <p class="text-xs">
+      <span phx-hook="DateTimeFmt" id={"#{job.id}-update-time"}>{job.updated_at}</span>
+    </p>
+  </:col>
   <:col :let={job} label="Status">
-    <span class={"#{if Enum.member?([:queued, :running], job.status), do: ~c"text-blue-500", else: ~c""}"}>
+    <p class={"#{if Enum.member?([:queued, :running], job.status), do: ~c"text-blue-500", else: ~c""}"}>
       {job.status}
-    </span>
+    </p>
+    <%= if job.status == :done do %>
+      <p>{format_job_duration(job)}</p>
+    <% end %>
   </:col>
 </.table>

@@ -1,4 +1,5 @@
 defmodule YtChopDevWeb.JobLive.Index do
+  alias YtChopDev.Helpers
   alias YtChopDev.Youtubes
   use YtChopDevWeb, :live_view
 
@@ -10,7 +11,6 @@ defmodule YtChopDevWeb.JobLive.Index do
     jobs = Jobs.list_jobs(20)
     video_ids = jobs |> Enum.map(fn j -> j.args["video_id"] end) |> Enum.uniq()
     videos = Youtubes.get_multi_youtube_videos_by_ids(video_ids)
-    IO.inspect(videos, label: "videos")
 
     socket =
       socket
@@ -30,5 +30,10 @@ defmodule YtChopDevWeb.JobLive.Index do
     |> Enum.filter(fn j ->
       j.status == :queued or j.status == :running
     end)
+  end
+
+  def format_job_duration(job) do
+    duration = DateTime.diff(job.updated_at, job.inserted_at, :second)
+    Helpers.format_seconds(duration)
   end
 end

@@ -1,6 +1,7 @@
 defmodule YtChopDev.Youtubes.YoutubeVideo do
   use Ecto.Schema
   import Ecto.Changeset
+  alias YtChopDev.Helpers
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -39,7 +40,7 @@ defmodule YtChopDev.Youtubes.YoutubeVideo do
 
   def transcript(transcript) when is_binary(transcript) do
     transcript
-    |> TimestampSplitter.split_timestamps()
+    |> Helpers.split_timestamps()
     |> Enum.map(fn t ->
       [start, text] = t |> String.split(">>>") |> Enum.map(&String.trim/1)
       {start, _} = Float.parse(start)

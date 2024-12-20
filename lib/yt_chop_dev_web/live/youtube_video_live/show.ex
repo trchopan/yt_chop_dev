@@ -1,5 +1,6 @@
 defmodule YtChopDevWeb.YoutubeVideoLive.Show do
   require Logger
+  alias YtChopDev.Helpers
   alias YtChopDev.Jobs.JobAgent
   alias YtChopDev.Jobs
   alias YtChopDev.Youtubes.YoutubeInfoUtils
@@ -147,14 +148,8 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
 
   def format_transcript_row(row) do
     [start, content] = row |> String.split(">>>") |> Enum.map(&String.trim/1)
-
     {start, _} = Integer.parse(start)
-
-    minutes = div(start, 60)
-    seconds = rem(start, 60)
-
-    formatted_time = "#{minutes}:#{String.pad_leading(Integer.to_string(seconds), 2, "0")}"
-
+    formatted_time = Helpers.format_seconds(start)
     {formatted_time, content}
   end
 
