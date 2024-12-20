@@ -7,7 +7,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
   alias YtChopDev.AI.AITextToSpeechUtils
   alias YtChopDev.Youtubes.YoutubeInfoUtils
 
-  def download_html(youtube_url, save_html \\ false) do
+  def download_transcript_html(youtube_url, opts \\ []) do
     Req.post("https://youtubetotranscript.com/transcript",
       headers: [
         {"accept",
@@ -20,8 +20,8 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     )
     |> case do
       {:ok, %Req.Response{status: 200, body: body}} ->
-        if save_html do
-          File.write!("index.html", body)
+        if opts[:save] do
+          File.write!("youtube-transcript.html", body)
         end
 
         {:ok, body}
@@ -32,10 +32,10 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
   end
 
   @doc """
-  To use with download_html(url, true) to save to file and read from it without download it again
+  To use with download_transcript_html(url, save: true) to save to file and read from it without download it again
   """
   def parse_file_content(filter_sponsor \\ false) do
-    file_content = File.read!("index.html")
+    file_content = File.read!("youtube-transcript.html")
     parse_transcript(file_content, filter_sponsor)
   end
 
@@ -59,10 +59,16 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
       children |> Enum.join() |> String.trim() != ""
     end)
     |> Enum.map(fn {_tag, attrs, children} ->
-      text = children |> Enum.join() |> String.trim()
+      text = children |> Enum.join() |> String.replace(~r"\[.*?\]", "") |> String.trim()
       {data_start, _} = List.keyfind(attrs, "data-start", 0) |> elem(1) |> Float.parse()
+
+      # TODO: add duration to data
       # {data_duration, _} = List.keyfind(attrs, "data-duration", 0) |> elem(1) |> Float.parse()
+
       {data_start, text}
+    end)
+    |> Enum.filter(fn {_start, text} ->
+      text != ""
     end)
   end
 
@@ -213,7 +219,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
         {video, video.transcript |> YoutubeVideo.transcript()}
       else
         Logger.info("#{youtube_id} > Downloading transcript")
-        {:ok, transcript_file} = download_html(youtube_url)
+        {:ok, transcript_file} = download_transcript_html(youtube_url)
         transcripts = parse_transcript(transcript_file)
 
         {:ok, video} =

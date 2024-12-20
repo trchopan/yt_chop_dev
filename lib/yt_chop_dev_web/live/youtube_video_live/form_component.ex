@@ -39,8 +39,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.FormComponent do
     youtube_id = YoutubeInfoUtils.youtube_id_from_url(youtube_url)
 
     case YoutubeInfoUtils.get_video_information(youtube_id) do
-      {:ok, youtube_info} ->
-        IO.inspect(youtube_info["id"], label: "youtube_info")
+      {:ok, _youtube_info} ->
         {:noreply, push_navigate(socket, to: ~p"/v/#{youtube_id}")}
 
       {:error, details} ->

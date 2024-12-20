@@ -35,9 +35,6 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
     language = Map.get(params, "language", "vie")
     gender = Map.get(params, "gender", "male")
 
-    IO.inspect(language, label: "language")
-    IO.inspect(gender, label: "gender")
-
     translate =
       if language != nil and gender != nil do
         translates
@@ -104,10 +101,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
   def check_video_has_en_caption(video_info) do
     found_en_caption =
       video_info["captions"]
-      |> Enum.find(fn e ->
-        IO.inspect(e, label: "caption")
-        Enum.member?(["en", "en-US"], e["language_code"])
-      end)
+      |> Enum.find(fn e -> Enum.member?(["en", "en-US"], e["language_code"]) end)
 
     if found_en_caption == nil do
       {:error, "Video does not have English caption"}

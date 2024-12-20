@@ -40,8 +40,6 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Index do
       (Youtubes.latest_youtube_videos_with_translates(page, limit) || [])
       |> Enum.map(&Youtubes.preload_youtube_video_translates/1)
 
-    IO.inspect(videos |> Enum.map(& &1.title), label: "videos")
-
     socket =
       socket
       |> stream(:youtube_videos, videos)
