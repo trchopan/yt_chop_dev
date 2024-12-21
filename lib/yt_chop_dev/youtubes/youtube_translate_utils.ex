@@ -57,7 +57,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     |> Enum.map(fn {_tag, attrs, children} ->
       text = children |> Enum.join() |> String.replace(~r"\[.*?\]", "") |> String.trim()
       {data_start, _} = List.keyfind(attrs, "data-start", 0) |> elem(1) |> Float.parse()
-      {data_start, text}
+      {data_start, text |> String.replace("\n", " ")}
     end)
     |> Enum.filter(fn {_start, text} -> text != "" end)
   end
@@ -112,7 +112,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
           body["captions"]
           |> Enum.map(fn caption ->
             {start, _} = Float.parse(caption["start"])
-            {start, caption["text"]}
+            {start, caption["text"] |> String.replace("\n", " ")}
           end)
 
         {:ok, captions}
@@ -164,7 +164,8 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
       end)
       |> Enum.join("\n")
 
-    with {:ok, result} <- AITextUtils.transcript_translate(content, language) do
+    with {:ok, result} <-
+           AITextUtils.transcript_translate_with_combined_sentences(content, language) do
       translated_transcripts =
         result
         |> Helpers.split_timestamps()
@@ -206,7 +207,8 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
             if should_be_audio_length > 0 and should_be_audio_length < audio_length do
               tempo = audio_length / should_be_audio_length
 
-              tempo = if tempo > 1.2, do: 1.2, else: tempo
+              max_tempo = 1.382
+              tempo = if tempo > max_tempo, do: max_tempo, else: tempo
 
               new_filename = (filename |> Path.rootname() |> Path.basename()) <> "_tempo.wav"
               change_audio_tempo(dir, new_filename, filename, tempo)
@@ -325,11 +327,9 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
 
   def normalize_audio_volume(dir, audio_path) do
     run_command(dir, "output_norm.wav", fn output_path ->
-      # ffmpeg -i output_audio.wav -filter:a "dynaudnorm=p=0.9:s=5,volume=2" output_norm.wav
-
       System.cmd("sh", [
         "-c",
-        "ffmpeg -y -hide_banner -v error -i #{audio_path} -filter:a \"dynaudnorm=p=0.9:s=5,volume=1.2\" #{output_path}"
+        "ffmpeg -y -hide_banner -v error -i #{audio_path} -filter:a \"dynaudnorm=p=0.9:s=5,volume=4\" #{output_path}"
       ])
     end)
   end

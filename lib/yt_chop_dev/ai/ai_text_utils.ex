@@ -123,44 +123,19 @@ defmodule YtChopDev.AI.AITextUtils do
     run_messages(messages, :vertex_ai)
   end
 
-  def transcript_translate(content, target) when is_binary(content) do
-    example_output =
-      case target do
-        "vie" ->
-          Message.new_system!("""
-          0.16 >>> Hôm nay tôi đã đăng một dòng tweet, tôi nghĩ rằng, bạn biết đấy, đã đến lúc phải đầu tư.
-          3.879 >>> Tôi nói có lẽ chỉ có mình tôi cảm thấy vậy, nhưng tôi cảm thấy thị trường cho các nhân vật nữ chính có ngoại hình nam tính, không hấp dẫn theo kiểu thông thường trong game không lớn như ngành công nghiệp video game nghĩ.
-          15.4 >>> Và tôi đang nghĩ về nhân vật này, rõ ràng là tôi nghĩ đây giống như Intergalactic hay gì đó, trò chơi này có lẽ đã bắt đầu phát triển hơn 5 năm trước.
-          """)
-
-        "jap" ->
-          Message.new_system!("""
-          0.16 >>> 今日、私はツイートを投稿しました。皆さんもご存知のように、投資を始める時が来たのだと思いました。
-          3.879 >>> 私はおそらく自分だけがそう感じているのかもしれないと言いましたが、ビデオゲーム業界が考えるほど、通常の魅力を持たない男性的な外見の女性主人公がいる市場は、それほど大きくないと感じています。
-          15.4 >>> そして、このキャラクターについて考えていました。明らかに私が考えていたのは、インターギャラクティックか何かのようなもので、おそらくこのゲームは5年以上前から開発が始まったものだと思います。
-          """)
-
-        "kor" ->
-          Message.new_system!("""
-          0.16 >>> 오늘 저는 트윗을 올렸어요. 제 생각에는, 아시다시피, 이제는 투자할 때가 되었다고 생각했습니다.
-          3.879 >>> 아마도 저 혼자만 그렇게 느낄 수 있지만, 저는 비디오 게임 산업이 생각하는 것만큼 게임 속에서 남성적인 외모와 일반적인 매력을 갖지 않은 여성 주인공 캐릭터에 대한 시장이 크지 않다고 느낍니다.
-          15.4 >>> 그리고 저는 이 캐릭터에 대해 생각하고 있었고, 분명히 이게 우주적인 무언가와 비슷하다고 생각합니다. 이 게임은 아마도 5년 이상 전에 개발이 시작되었을 것입니다.
-          """)
-
-        _ ->
-          raise "Invalid target"
-      end
-
-    messages = [
+  def transcript_translate_with_combined_sentences(content, target) when is_binary(content) do
+    system_prompt =
       Message.new_system!("""
-      You are an expert in translating video scripts into text. The user will give you a script with timestamps for each line without any punctuation. Your task are:
-      - Translate the script into proper punctuation and full sentences.
-      - You may combine multiple lines into a sentence and indicate the corresponding timestamps.
-      - Must keeps the timestamp spacing as the given source.
+      You are an expert in translating video scripts into text. The user will give you a script with timestamps for each line without any punctuation. Your tasks are as follows: 
+      - Translate the script into proper punctuation.
+      - You may combine multiple lines into a sentence and include the corresponding timestamps.
+      - The output text transcript must be a full sentence but not longer than 50 words.
 
       Output the transcript translation to #{translate_target(target)} and keep the format of the transcript:
       TIMESTAMP >>> TRANSCRIPT 
-      """),
+      """)
+
+    example_input =
       Message.new_user!("""
       0.16 >>> I made a tweet today I figured that you
       2.36 >>> know it's like it's time to make an
@@ -173,12 +148,130 @@ defmodule YtChopDev.AI.AITextUtils do
       17.32 >>> I think this like Intergalactic or
       18.96 >>> something like that this game probably
       20.68 >>> started development over 5 years ago
-      """),
+      """)
+
+    example_output =
+      case target do
+        "vie" ->
+          """
+          0.16 >>> Hôm nay tôi đã đăng một dòng tweet, tôi nghĩ rằng, bạn biết đấy, đã đến lúc phải đầu tư.
+          3.879 >>> Tôi nói có lẽ chỉ có mình tôi cảm thấy vậy, nhưng tôi cảm thấy thị trường cho các nhân vật nữ chính có ngoại hình nam tính, không hấp dẫn theo kiểu thông thường trong game không lớn như ngành công nghiệp video game nghĩ.
+          15.4 >>> Và tôi đang nghĩ về nhân vật này, rõ ràng là tôi nghĩ đây giống như Intergalactic hay gì đó, trò chơi này có lẽ đã bắt đầu phát triển hơn 5 năm trước.
+          """
+
+        "jap" ->
+          """
+          0.16 >>> 今日、私はツイートを投稿しました。皆さんもご存知のように、投資を始める時が来たのだと思いました。
+          3.879 >>> 私はおそらく自分だけがそう感じているのかもしれないと言いましたが、ビデオゲーム業界が考えるほど、通常の魅力を持たない男性的な外見の女性主人公がいる市場は、それほど大きくないと感じています。
+          15.4 >>> そして、このキャラクターについて考えていました。明らかに私が考えていたのは、インターギャラクティックか何かのようなもので、おそらくこのゲームは5年以上前から開発が始まったものだと思います。
+          """
+
+        "kor" ->
+          """
+          0.16 >>> 오늘 저는 트윗을 올렸어요. 제 생각에는, 아시다시피, 이제는 투자할 때가 되었다고 생각했습니다.
+          3.879 >>> 아마도 저 혼자만 그렇게 느낄 수 있지만, 저는 비디오 게임 산업이 생각하는 것만큼 게임 속에서 남성적인 외모와 일반적인 매력을 갖지 않은 여성 주인공 캐릭터에 대한 시장이 크지 않다고 느낍니다.
+          15.4 >>> 그리고 저는 이 캐릭터에 대해 생각하고 있었고, 분명히 이게 우주적인 무언가와 비슷하다고 생각합니다. 이 게임은 아마도 5년 이상 전에 개발이 시작되었을 것입니다.
+          """
+
+        _ ->
+          raise "Invalid target"
+      end
+
+    example_output = Message.new_assistant!(example_output)
+
+    messages = [
+      system_prompt,
+      example_input,
       example_output,
       Message.new_user!(content)
     ]
 
     run_messages(messages, :vertex_ai_flash)
+    # run_messages(messages, :vertex_ai)
+  end
+
+  def transcript_translate_exact_lines(content, target) when is_binary(content) do
+    system_prompt =
+      Message.new_system!("""
+      You are an expert in translating video scripts.
+      Translate the givent text to #{translate_target(target)} and keep the format of the transcript:
+      TIMESTAMP >>> TRANSCRIPT 
+      """)
+
+    example_input =
+      Message.new_user!("""
+      0.16 >>> I made a tweet today I figured that you
+      2.36 >>> know it's like it's time to make an
+      3.879 >>> investment I said maybe it's just me but
+      6.279 >>> I feel like the market for masculine
+      8.639 >>> non-conventionally attractive female
+      10.679 >>> leads in games isn't as big as the video
+      13.44 >>> game industry thinks it is and I was
+      15.4 >>> thinking about this character obviously
+      17.32 >>> I think this like Intergalactic or
+      18.96 >>> something like that this game probably
+      20.68 >>> started development over 5 years ago
+      """)
+
+    example_output =
+      case target do
+        "vie" ->
+          """
+          0.16 >>> Hôm nay tôi đã đăng một tweet mà tôi cho rằng bạn
+          2.36 >>> biết đấy, đến lúc đầu tư rồi
+          3.879 >>> Tôi nói có thể chỉ là tôi thôi nhưng
+          6.279 >>> Tôi cảm thấy thị trường cho
+          8.639 >>> các nhân vật nữ lãnh đạo có vẻ nam tính
+          10.679 >>> không hấp dẫn theo kiểu truyền thống trong game không lớn 
+          13.44 >>> như ngành công nghiệp trò chơi điện tử nghĩ và tôi thì
+          15.4 >>> đang nghĩ về nhân vật này tất nhiên
+          17.32 >>> Tôi nghĩ điều này giống như Intergalactic hay
+          18.96 >>> một cái gì đó tương tự, trò chơi này có lẽ
+          20.68 >>> đã bắt đầu phát triển hơn 5 năm trước
+          """
+
+        "jap" ->
+          """
+          0.16 >>> 今日、ツイートをしたんですけど、あなたも
+          2.36 >>> 分かっていると思いますが、そろそろ
+          3.879 >>> 投資をする時なのかなと感じました。たぶん
+          6.279 >>> 自分だけの考えかもしれませんが、
+          8.639 >>> 男性らしい外見で常識的ではない
+          10.679 >>> 魅力を持つ女性キャラクターの
+          13.44 >>> 市場はゲーム業界で思われているほど
+          15.4 >>> 大きくない気がします。それについて
+          17.32 >>> 考えていました。このキャラクターのことを
+          18.96 >>> 言っていると思います。おそらくこのゲームは
+          20.68 >>> 開発を始めたのが5年以上前でしょう。
+          """
+
+        "kor" ->
+          """
+          0.16 >>> 오늘 트윗을 올렸는데 
+          2.36 >>> 이제 투자를 해야 할 때가 된 것 같다고 생각했어요 
+          3.879 >>> 아마 저만 그런 걸지도 모르지만, 
+          6.279 >>> 남성적이고 
+          8.639 >>> 전통적이지 않은 매력의 여성 주인공이 있는 게임 
+          10.679 >>> 시장이 게임 산업이 생각하는 것만큼 
+          13.44 >>> 크지 않다는 느낌을 받았거든요. 그리고 저는 
+          15.4 >>> 이 캐릭터에 대해 생각하고 있었어요. 물론 
+          17.32 >>> 저는 이게 예를 들어 Intergalactic 같은 
+          18.96 >>> 게임이라고 생각했는데, 아마 
+          20.68 >>> 이 게임은 5년 이상 전에 개발을 시작했을 거예요.
+          """
+      end
+
+    example_output = Message.new_assistant!(example_output)
+
+    messages = [
+      system_prompt,
+      example_input,
+      example_output,
+      Message.new_user!(content)
+    ]
+
+    run_messages(messages, :vertex_ai_flash)
+    # run_messages(messages, :vertex_ai)
   end
 
   @doc """

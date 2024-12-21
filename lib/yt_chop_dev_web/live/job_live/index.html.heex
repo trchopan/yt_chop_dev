@@ -18,19 +18,19 @@
   </div>
 </.header>
 
-<.table
-  id="jobs"
-  rows={@jobs}
-  row_click={fn job -> JS.navigate(~p"/v/#{job.args["video_id"]}") end}
->
+<.table id="jobs" rows={@jobs}>
   <:col :let={job} label="video">
-    <% thumbnail = YoutubeInfoUtils.make_youtube_thumbnail_url(job.args["video_id"]) %>
-    <img src={thumbnail} class="h-16 w-32 object-cover" alt="" />
+    <.link navigate={~p"/v/#{job.args["video_id"]}"}>
+      <% thumbnail = YoutubeInfoUtils.make_youtube_thumbnail_url(job.args["video_id"]) %>
+      <img src={thumbnail} class="h-16 w-32 object-cover" alt="" />
+    </.link>
   </:col>
   <:col :let={job} label="Language">
     <% video = find_video(job, @videos) %>
     <%= if video != nil do %>
-      {video.title}
+      <.link navigate={~p"/v/#{job.args["video_id"]}"}>
+        {video.title}
+      </.link>
     <% end %>
   </:col>
   <:col :let={job} label="Translation">

@@ -39,13 +39,12 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
     translate =
       if language != nil and gender != nil do
         translates
-        |> Enum.filter(
+        |> Enum.find(
           &(&1.language == String.to_existing_atom(language) and
               &1.gender == String.to_existing_atom(gender))
         )
-        |> Enum.at(0)
       else
-        nil
+        translates |> Enum.at(0)
       end
 
     request_form = to_form(%{"language" => language, "gender" => gender})

@@ -18,10 +18,6 @@ defmodule YtChopDev.Recaptcha do
         recaptcha_action = body["tokenProperties"]["action"]
         recaptcha_score = body["riskAnalysis"]["score"]
 
-        IO.inspect("#{recaptcha_valid} #{recaptcha_action} #{recaptcha_score}",
-          label: "recaptcha"
-        )
-
         valid = recaptcha_valid && recaptcha_action == action && recaptcha_score >= 0.7
 
         {:ok, valid}

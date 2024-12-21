@@ -12,22 +12,22 @@
   <% thumbnail = YoutubeInfoUtils.make_youtube_thumbnail_url(@youtube_video.video_id) %>
 
   <%= if length(@youtube_video_translates) == 0 do %>
-    <div class="flex justify-center">
+    <div class="flex flex-col items-center">
       <img src={thumbnail} class="w-full max-w-[480px] object-cover" />
-    </div>
-    <div>
       <p class="text-center font-bold py-4">Not yet translated</p>
     </div>
   <% else %>
     <div class="py-2">
-      <%= for translate <- @youtube_video_translates do %>
+      <%= for t <- @youtube_video_translates do %>
         <% selected_class =
-          if translate.id == @translate.id, do: ~c"bg-blue-400 text-white", else: ~c"" %>
+          if @translate != nil && t.id == @translate.id,
+            do: ~c"bg-blue-400 text-white",
+            else: ~c"" %>
         <.link
           class={"rounded border border-gray-400 px-2 py-1 #{selected_class} mr-2"}
-          navigate={"/v/#{@youtube_video.video_id}?language=#{translate.language}&gender=#{translate.gender}"}
+          navigate={"/v/#{@youtube_video.video_id}?language=#{t.language}&gender=#{t.gender}"}
         >
-          {translate.language} - {translate.gender}
+          {t.language} - {t.gender}
         </.link>
       <% end %>
     </div>
@@ -43,8 +43,13 @@
 <%= if @translate != nil do %>
   <% thumbnail = YoutubeInfoUtils.make_youtube_thumbnail_url(@youtube_video.video_id) %>
   <div>
-    <div>
-      <video controls src={"/files/#{@translate.filename}"} poster={thumbnail} />
+    <div class="flex flex-col items-center">
+      <%= if @translate.filename != "" do %>
+        <video controls src={"/files/#{@translate.filename}"} poster={thumbnail} />
+      <% else %>
+        <img src={thumbnail} class="w-full max-w-[480px] object-cover" />
+        <p class="font-bold py-4">Combinding Video</p>
+      <% end %>
     </div>
     <div class="grid grid-cols-2 gap-2 text-xs">
       <div class="max-h-[40vh] overflow-y-scroll">
