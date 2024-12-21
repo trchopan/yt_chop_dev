@@ -1,5 +1,6 @@
 defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
   require Logger
+  alias YtChopDev.Helpers
   alias YtChopDev.Youtubes.YoutubeVideoTranslate
   alias YtChopDev.Youtubes
   alias YtChopDev.Youtubes.YoutubeVideo
@@ -166,7 +167,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     with {:ok, result} <- AITextUtils.transcript_translate(content, language) do
       translated_transcripts =
         result
-        |> String.split("\n")
+        |> Helpers.split_timestamps()
         |> Enum.filter(&(String.trim(&1) != ""))
         |> Enum.map(fn s ->
           [timestamp, script] = String.split(s, ">>>") |> Enum.map(&String.trim(&1))
