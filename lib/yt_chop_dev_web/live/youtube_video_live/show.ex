@@ -1,5 +1,6 @@
 defmodule YtChopDevWeb.YoutubeVideoLive.Show do
   require Logger
+  alias YtChopDev.Recaptcha
   alias YtChopDev.Helpers
   alias YtChopDev.Jobs.JobAgent
   alias YtChopDev.Jobs
@@ -56,7 +57,10 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
       |> assign(:youtube_video_translates, translates)
       |> assign(:translate, translate)
       |> assign(:request_form, request_form)
+      |> assign(:form2, to_form(%{}))
       |> assign(:request_form_error, nil)
+      |> assign(:show_translate, true)
+      |> push_event("reset-recaptcha", %{})
 
     {:ok, socket}
   end
@@ -64,41 +68,74 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
   @impl true
   def handle_event(
         "request_translate",
-        %{"language" => language, "gender" => gender} = _params,
+        %{"language" => language, "gender" => gender} = params,
         socket
       ) do
-    video = socket.assigns.youtube_video
-    {:ok, video_info} = YoutubeInfoUtils.get_video_information(video.video_id)
+    token = params["g-recaptcha-response"]
 
-    with :ok <- check_video_length(video_info),
-         :ok <- check_video_has_en_caption(video_info),
-         # :ok <- check_already_translated(video, language, gender),
-         :ok <- check_job_limit(),
-         :ok <- check_existing_job(video, language, gender) do
-      {:ok, job} =
-        Jobs.create_job(%{
-          args: %{"video_id" => video.video_id, "language" => language, "gender" => gender},
-          name: :youtube_translate,
-          status: :queued
-        })
-
-      JobAgent.queue_job(job)
-      {:noreply, socket |> push_navigate(to: ~p"/jobs")}
+    if token == nil do
+      {:noreply, socket |> push_event("reset-recaptcha", %{})}
     else
-      {:error, details} ->
-        {:noreply, socket |> assign(:request_form_error, details)}
+      video = socket.assigns.youtube_video
+      {:ok, video_info} = YoutubeInfoUtils.get_video_information(video.video_id)
+
+      with :ok <- must_valid_recaptcha_token(token),
+           :ok <- must_valid_video_length(video_info, 30),
+           :ok <- must_have_caption_english(video_info),
+           :ok <- must_not_reach_job_limit(),
+           :ok <- must_not_existing_job(video, language, gender) do
+        should_force =
+          case check_already_translated(video, language, gender) do
+            :ok ->
+              false
+
+            {:error, _} ->
+              true
+          end
+
+        {:ok, job} =
+          Jobs.create_job(%{
+            args: %{
+              "video_id" => video.video_id,
+              "language" => language,
+              "gender" => gender,
+              "force_translate" => should_force
+            },
+            name: :youtube_translate,
+            status: :queued
+          })
+
+        JobAgent.queue_job(job)
+        {:noreply, socket |> push_navigate(to: ~p"/jobs")}
+      else
+        {:error, details} ->
+          {:noreply,
+           socket |> assign(:request_form_error, details) |> push_event("reset-recaptcha", %{})}
+      end
     end
   end
 
-  def check_video_length(video_info) do
-    if video_info["lengthSeconds"] > 30 * 60 do
+  def must_valid_recaptcha_token(token) do
+    IO.inspect(token)
+
+    with {:ok, true} <- Recaptcha.verify(token, "youtube_translate") do
+      :ok
+    else
+      error ->
+        Logger.debug("Recaptcha error: #{inspect(error)}")
+        {:error, "Invalid reCAPTCHA"}
+    end
+  end
+
+  def must_valid_video_length(video_info, minutes) do
+    if video_info["lengthSeconds"] > minutes * 60 do
       {:error, "Video too long (max 30 minutes)"}
     else
       :ok
     end
   end
 
-  def check_video_has_en_caption(video_info) do
+  def must_have_caption_english(video_info) do
     found_en_caption =
       video_info["captions"]
       |> Enum.find(fn e -> Enum.member?(["en", "en-US"], e["language_code"]) end)
@@ -120,7 +157,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
     end
   end
 
-  def check_job_limit() do
+  def must_not_reach_job_limit() do
     jobs = Jobs.list_pending_jobs()
 
     if length(jobs) >= 10 do
@@ -130,7 +167,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
     end
   end
 
-  def check_existing_job(video, language, gender) do
+  def must_not_existing_job(video, language, gender) do
     jobs = Jobs.get_jobs_for_youtube_translate(video.video_id, language, gender)
 
     if jobs |> Enum.any?(fn job -> job.status == :running or job.status == :queued end) do
@@ -149,7 +186,7 @@ defmodule YtChopDevWeb.YoutubeVideoLive.Show do
 
   def format_transcript(transcript) do
     transcript
-    |> String.split("\n")
+    |> Helpers.split_timestamps()
     |> Enum.map(&format_transcript_row/1)
   end
 end

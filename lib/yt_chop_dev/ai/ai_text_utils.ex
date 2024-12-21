@@ -130,33 +130,21 @@ defmodule YtChopDev.AI.AITextUtils do
           Message.new_system!("""
           0.16 >>> Hôm nay tôi đã đăng một dòng tweet, tôi nghĩ rằng, bạn biết đấy, đã đến lúc phải đầu tư.
           3.879 >>> Tôi nói có lẽ chỉ có mình tôi cảm thấy vậy, nhưng tôi cảm thấy thị trường cho các nhân vật nữ chính có ngoại hình nam tính, không hấp dẫn theo kiểu thông thường trong game không lớn như ngành công nghiệp video game nghĩ.
-          13.44 >>> Và tôi đang nghĩ về nhân vật này, rõ ràng là tôi nghĩ đây giống như Intergalactic hay gì đó, trò chơi này có lẽ đã bắt đầu phát triển hơn 5 năm trước.
-          22.96 >>> Và có thể khi đó, một nhân vật như thế này có vẻ như là một ý tưởng tốt hơn.
-          26.96 >>> Đồ họa của game này thực sự rất tốt.
-          29.519 >>> Nếu bạn không thích nhân vật, thì có rất nhiều tác phẩm nghệ thuật mà tôi không phải là fan, nhưng tôi vẫn có thể ngưỡng mộ vì nó trông rất đẹp.
-          38.0 >>> Tôi nghĩ rằng, nếu bạn đang tìm kiếm một thợ săn tiền thưởng không gian mang phong cách retro những năm 80, những người chuyên săn tiền thưởng, bắn người và chiến đấu bằng kiếm laser, thì bạn đang nhắm đến một phần đông khán giả nam.
+          15.4 >>> Và tôi đang nghĩ về nhân vật này, rõ ràng là tôi nghĩ đây giống như Intergalactic hay gì đó, trò chơi này có lẽ đã bắt đầu phát triển hơn 5 năm trước.
           """)
 
         "jap" ->
           Message.new_system!("""
           0.16 >>> 今日、私はツイートを投稿しました。皆さんもご存知のように、投資を始める時が来たのだと思いました。
           3.879 >>> 私はおそらく自分だけがそう感じているのかもしれないと言いましたが、ビデオゲーム業界が考えるほど、通常の魅力を持たない男性的な外見の女性主人公がいる市場は、それほど大きくないと感じています。
-          13.44 >>> そして、このキャラクターについて考えていました。明らかに私が考えていたのは、インターギャラクティックか何かのようなもので、おそらくこのゲームは5年以上前から開発が始まったものだと思います。
-          22.96 >>> そして、おそらくその時には、このようなキャラクターはより良いアイデアのように思えたのかもしれません。
-          26.96 >>> このゲームのグラフィックスは本当に素晴らしいです。
-          29.519 >>> キャラクターが好きでないなら、私がファンでない多くのアートもありますが、それでも非常に美しく見えるため鑑賞できます。
-          38.0 >>> もしあなたが80年代風のレトロなスタイルの宇宙賞金稼ぎを探しているのなら、彼らは人を狙ったり、銃で撃ったり、レーザー剣で戦ったりする専門家で、その場合、あなたは主に男性のオーディエンスを狙っています。
+          15.4 >>> そして、このキャラクターについて考えていました。明らかに私が考えていたのは、インターギャラクティックか何かのようなもので、おそらくこのゲームは5年以上前から開発が始まったものだと思います。
           """)
 
         "kor" ->
           Message.new_system!("""
           0.16 >>> 오늘 저는 트윗을 올렸어요. 제 생각에는, 아시다시피, 이제는 투자할 때가 되었다고 생각했습니다.
           3.879 >>> 아마도 저 혼자만 그렇게 느낄 수 있지만, 저는 비디오 게임 산업이 생각하는 것만큼 게임 속에서 남성적인 외모와 일반적인 매력을 갖지 않은 여성 주인공 캐릭터에 대한 시장이 크지 않다고 느낍니다.
-          13.44 >>> 그리고 저는 이 캐릭터에 대해 생각하고 있었고, 분명히 이게 우주적인 무언가와 비슷하다고 생각합니다. 이 게임은 아마도 5년 이상 전에 개발이 시작되었을 것입니다.
-          22.96 >>> 아마도 그때는 이런 캐릭터가 더 좋은 아이디어처럼 보였을지도 모릅니다.
-          26.96 >>> 이 게임의 그래픽은 정말 좋습니다.
-          29.519 >>> 캐릭터가 마음에 들지 않더라도, 제가 팬이 아닌 많은 예술 작품들이 있지만, 그것이 매우 아름다워 보이기 때문에 여전히 감탄할 수 있습니다.
-          38.0 >>> 80년대 레트로 스타일의 우주 현상금 사냥꾼, 즉 현상금을 사냥하고, 사람을 쏘고, 레이저 검으로 싸우는 사람을 찾고 있다면, 남성 관객의 상당 부분을 대상으로 하고 있다는 생각이 듭니다.
+          15.4 >>> 그리고 저는 이 캐릭터에 대해 생각하고 있었고, 분명히 이게 우주적인 무언가와 비슷하다고 생각합니다. 이 게임은 아마도 5년 이상 전에 개발이 시작되었을 것입니다.
           """)
 
         _ ->
@@ -165,7 +153,10 @@ defmodule YtChopDev.AI.AITextUtils do
 
     messages = [
       Message.new_system!("""
-      You are an expert in translating video scripts into text. The user will give you a script with timestamps for each line without any punctuation. Your task is to translate the script into proper punctuation and full sentences. You may combine multiple lines into a sentence and indicate the correct timestamps.
+      You are an expert in translating video scripts into text. The user will give you a script with timestamps for each line without any punctuation. Your task are:
+      - Translate the script into proper punctuation and full sentences.
+      - You may combine multiple lines into a sentence and indicate the corresponding timestamps.
+      - Must keeps the timestamp spacing as the given source.
 
       Output the transcript translation to #{translate_target(target)} and keep the format of the transcript:
       TIMESTAMP >>> TRANSCRIPT 
@@ -181,20 +172,7 @@ defmodule YtChopDev.AI.AITextUtils do
       15.4 >>> thinking about this character obviously
       17.32 >>> I think this like Intergalactic or
       18.96 >>> something like that this game probably
-      20.68 >>> started development over 5 years ago and
-      22.96 >>> like maybe back then a character like
-      25.039 >>> this might have seemed like it was a
-      26.96 >>> better idea the graphics for this are
-      29.519 >>> really really good if you don't like the
-      32.0 >>> character or whatever there are a lot of
-      34.04 >>> paintings that I'm not a fan of but I
-      35.84 >>> can admire that it looks really good I
-      38.0 >>> think that if you are looking at a space
-      40.8 >>> bounty hunter that has 80s retro
-      43.68 >>> aesthetic that are about bounty hunting
-      45.399 >>> and shooting people and fighting with
-      46.68 >>> laser swords you are looking at a super
-      49.48 >>> majority male audience
+      20.68 >>> started development over 5 years ago
       """),
       example_output,
       Message.new_user!(content)

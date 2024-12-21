@@ -36,12 +36,18 @@ defmodule YtChopDev.Jobs.JobWorkerYoutubeTranslate do
     video_id = job.args["video_id"]
     language = job.args["language"]
     gender = job.args["gender"]
+    force_translate = job.args["force_translate"]
+    force_transcript = job.args["force_transcript"]
 
     try do
       video = Youtubes.get_youtube_video_by_video_id(video_id)
 
       with {:ok, video, translate} <-
-             YoutubeTranslateUtils.youtube_translate(video, language, gender) do
+             YoutubeTranslateUtils.youtube_translate(video, language, gender,
+               force_translate: force_translate,
+               force_transcript: force_transcript,
+               cleanup: true
+             ) do
         {:ok, video, translate}
       end
     rescue

@@ -75,8 +75,10 @@ config :langchain,
     region: System.get_env("VERTEX_AI_REGION")
   ]
 
-config :yt_chop_dev, :youtube_info_api, System.get_env("YOUTUBE_INFO_API")
-config :yt_chop_dev, :tts_api_key, System.get_env("TTS_API_KEY")
+config :yt_chop_dev,
+  youtube_info_api: System.get_env("YOUTUBE_INFO_API"),
+  tts_api_key: System.get_env("TTS_API_KEY"),
+  recaptcha_key: "6Len8KEqAAAAAGoHn5Zvi2jeGwCN2V1syhD0Q53f"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -5,7 +5,11 @@ defmodule YtChopDev.Jobs.JobWorker do
   alias Broadway.Message
 
   def catch_all_error(message, error, job) do
-    {:ok, job} = Jobs.update_job(job, %{status: :failed, metadata: %{error: error}})
+    {:ok, job} =
+      Jobs.update_job(job, %{
+        status: :failed,
+        metadata: %{error: inspect(error, limit: :infinity)}
+      })
 
     message
     |> Message.put_data({:error, error, job})

@@ -46,13 +46,23 @@
     <div>
       <video controls src={"/files/#{@translate.filename}"} poster={thumbnail} />
     </div>
-    <div class="max-h-[40vh] overflow-y-scroll text-xs">
-      <%= for {time, content}<- format_transcript(@translate.transcript) do %>
-        <p class="grid grid-cols-[36px,1fr]">
-          <span class="text-gray-400">{time}</span>
-          <span>{content}</span>
-        </p>
-      <% end %>
+    <div class="grid grid-cols-2 gap-2 text-xs">
+      <div class="max-h-[40vh] overflow-y-scroll">
+        <%= for {time, content}<- format_transcript(@youtube_video.transcript) do %>
+          <p class="grid grid-cols-[36px,1fr]">
+            <span class="text-gray-400">{time}</span>
+            <span>{content}</span>
+          </p>
+        <% end %>
+      </div>
+      <div class="max-h-[40vh] overflow-y-scroll">
+        <%= for {time, content}<- format_transcript(@translate.transcript) do %>
+          <p class="grid grid-cols-[36px,1fr]">
+            <span class="text-gray-400">{time}</span>
+            <span>{content}</span>
+          </p>
+        <% end %>
+      </div>
     </div>
   </div>
 <% end %>
@@ -78,6 +88,15 @@
       label="Gender"
       options={["male", "female"]}
     />
+
+    <div
+      id="recaptcha-form"
+      phx-hook="Recaptcha"
+      class="g-recaptcha"
+      data-sitekey={Application.get_env(:yt_chop_dev, :recaptcha_key)}
+      data-action="youtube_translate"
+    >
+    </div>
     <:actions>
       <.button class="whitespace-nowrap" phx-disable-with="Checking...">Translate ✨</.button>
       <%= if @request_form_error do %>

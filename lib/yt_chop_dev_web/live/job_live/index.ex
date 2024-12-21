@@ -8,7 +8,7 @@ defmodule YtChopDevWeb.JobLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    jobs = Jobs.list_jobs(20)
+    jobs = Jobs.list_jobs(10)
     video_ids = jobs |> Enum.map(fn j -> j.args["video_id"] end) |> Enum.uniq()
     videos = Youtubes.get_multi_youtube_videos_by_ids(video_ids)
 

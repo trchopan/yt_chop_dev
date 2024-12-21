@@ -27,7 +27,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
         {:ok, body}
 
       {:ok, %Req.Response{status: status, body: body}} ->
-        {:error, "HTTP request failed: #{status} #{body}"}
+        {:error, "HTTP request failed: #{Integer.to_string(status)} #{inspect(body)}"}
 
       {:error, exeption} ->
         {:error, "HTTP request failed: #{exeption.reason}"}
@@ -117,7 +117,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
         {:ok, captions}
 
       {:ok, %Req.Response{status: status, body: body}} ->
-        {:error, "HTTP request failed: #{status} #{body}"}
+        {:error, "HTTP request failed: #{Integer.to_string(status)} #{inspect(body)}"}
 
       {:error, exeption} ->
         {:error, "HTTP request failed: #{exeption.reason}"}
@@ -205,8 +205,9 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
             if should_be_audio_length > 0 and should_be_audio_length < audio_length do
               tempo = audio_length / should_be_audio_length
 
-              new_filename = (filename |> Path.rootname() |> Path.basename()) <> "_tempo.wav"
+              tempo = if tempo > 1.2, do: 1.2, else: tempo
 
+              new_filename = (filename |> Path.rootname() |> Path.basename()) <> "_tempo.wav"
               change_audio_tempo(dir, new_filename, filename, tempo)
             else
               {:ok, filename}
@@ -307,8 +308,6 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
           Enum.map_join(1..Enum.count(tts_audios), "", fn i -> "[r#{i}]" end) <>
           "amix=inputs=#{amix_inputs}:dropout_transition=0,volume=4[out]"
 
-      IO.puts(filter_complex <> "; " <> amix)
-
       # Construct the full command
       command = """
       ffmpeg -y -hide_banner -v error \
@@ -343,7 +342,7 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
     end)
   end
 
-  def youtube_translate(%YoutubeVideo{} = video, language, gender, force_translate \\ false) do
+  def youtube_translate(%YoutubeVideo{} = video, language, gender, opts) do
     youtube_id = video.video_id
     youtube_url = "https://www.youtube.com/watch?v=" <> youtube_id
 
@@ -374,11 +373,10 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
       Logger.info("#{youtube_id} > Video and audio already exists")
     end
 
+    Logger.info("#{youtube_id} > Getting transcript")
+
     {video, transcripts} =
-      if force_translate == false and video.transcript != nil do
-        {video, video.transcript |> YoutubeVideo.transcript()}
-      else
-        Logger.info("#{youtube_id} > Downloading transcript")
+      if opts[:force_transcript] == true or video.transcript == nil do
         {:ok, transcripts} = get_transcript(youtube_url)
 
         {:ok, video} =
@@ -387,22 +385,20 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
           })
 
         {video, transcripts}
+      else
+        Logger.info("#{youtube_id} > Found existing transcript")
+        {video, video.transcript |> YoutubeVideo.transcript()}
       end
 
     Logger.info(
       "#{youtube_id} > Transcript length #{String.length(inspect(transcripts, limit: :infinity))}"
     )
 
-    Logger.info("#{youtube_id} > Creating translate for transcript")
-
+    Logger.info("#{youtube_id} > Getting translation")
     translate = Youtubes.get_youtube_video_translate_by_video_id(youtube_id, language, gender)
 
     {translate, translated_transcripts} =
-      if force_translate == false and translate != nil do
-        {translate, translate.transcript |> YoutubeVideoTranslate.transcript()}
-      else
-        Logger.info("#{youtube_id} > Translating transcript")
-
+      if opts[:force_translate] == true or translate == nil do
         if translate != nil do
           # TODO: Make upsert function instead of handle here
           # Remove old translate
@@ -421,6 +417,9 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
           })
 
         {translate, translated_transcripts}
+      else
+        Logger.info("#{youtube_id} > Found existing translation")
+        {translate, translate.transcript |> YoutubeVideoTranslate.transcript()}
       end
 
     Logger.info("#{youtube_id} > Creating audio files for transcripts")
@@ -451,7 +450,9 @@ defmodule YtChopDev.Youtubes.YoutubeTranslateUtils do
         filename: "#{youtube_id}/#{language}/#{gender}/#{Path.basename(output_path)}"
       })
 
-    File.rm_rf!(temp_dir)
+    if opts[:cleanup] == true do
+      File.rm_rf!(temp_dir)
+    end
 
     {:ok, video, translate}
   end
